@@ -137,6 +137,8 @@ private:
     //! infection rate
     double beta_;
 
+    bool continuous;
+    
     Parameters_(); //!< Sets default parameter values
 
     void get( DictionaryDatum& ) const;             //!< Store current values in dictionary

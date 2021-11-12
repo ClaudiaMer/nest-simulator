@@ -110,8 +110,10 @@ namespace nest
     // consistent.
     ArchivingNode::set_status( d );
 
+    // if we get here, temporaries contain consistent set of properties
     P_ = ptmp;
     S_ = stmp;
+
   }
 
 
@@ -150,7 +152,7 @@ namespace nest
   {
     def< double >( d, names::tau_m, tau_m_ );
     def< double >( d, names::beta, beta_ );
-    def< double >( d, names::mu, mu_ ); // comment
+    def< double >( d, names::mu, mu_ );
   }
 
 
@@ -184,10 +186,8 @@ namespace nest
 
 
   void
-  sir_neuron::State_::set( const DictionaryDatum& d, const Parameters_&, Node* node)
+  sir_neuron::State_::set( const DictionaryDatum&, const Parameters_&, Node* )
   {
-    updateValueParam< double >( d, names::y, y_, node );// sir_neuron output state
-    updateValueParam< double >( d, names::h, h_, node ); // summed input
   }
 
 
@@ -303,7 +303,7 @@ namespace nest
         }
         // infected neurons recover with probability P_.mu
         if (S_.y_ == 1) {
-          if ( V_.rng_->drand() <P_.mu_){
+          if ( V_.rng_->drand() < P_.mu_){
             new_y = 2;
             }
           else {
@@ -315,8 +315,8 @@ namespace nest
         {
           SpikeEvent se;
           // use multiplicity 2 to signal transition to 1 state
-          // use multiplicity 1 to signal transition to 2 state
-          se.set_multiplicity( (new_y-1) ? 1 : 2 );
+          // use multiplicity 1 to signal transition to 0 state
+          se.set_multiplicity( new_y ? 2 : 1 );
           kernel().event_delivery_manager.send( *this, se, lag );
 
           // As multiplicity is used only to signal internal information
@@ -327,14 +327,8 @@ namespace nest
         }
 
         // draw next update interval from exponential distribution
-        // if continuous time markov process,
-        // add 1 instead
-        if P_.continuous {
-          S_.t_next_ += Time::V_.exp_dist_( V_.rng_ ) * P_.tau_m_ );
-        }
-        else {
-        S_.t_next_ += Time::ms( 1);
-        }
+        S_.t_next_ += Time::ms( V_.exp_dist_( V_.rng_ ) * P_.tau_m_ );
+
       } // of if (update now)
 
       // log state data

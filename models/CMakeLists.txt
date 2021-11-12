@@ -74,6 +74,7 @@ set( models_sources
     iaf_psc_exp_multisynapse.h iaf_psc_exp_multisynapse.cpp
     iaf_psc_exp_ps.cpp iaf_psc_exp_ps.h
     iaf_psc_exp_ps_lossless.cpp iaf_psc_exp_ps_lossless.h
+    infection_detector.h infection_detector.cpp
     izhikevich.h izhikevich.cpp
     jonke_synapse.h
     lin_rate.h lin_rate.cpp

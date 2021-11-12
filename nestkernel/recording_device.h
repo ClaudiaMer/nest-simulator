@@ -140,10 +140,12 @@ public:
 
   enum Type
   {
+
     MULTIMETER,
     SPIKE_RECORDER,
     SPIN_DETECTOR,
-    WEIGHT_RECORDER
+    WEIGHT_RECORDER,
+    INFECTION_DETECTOR
   };
 
   virtual Type get_type() const = 0;
