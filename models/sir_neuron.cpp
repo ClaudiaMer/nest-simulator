@@ -126,6 +126,7 @@ namespace nest
     : tau_m_( 10.0 ) // ms
     , mu_( 0.5 )
     , beta_( 0.5 )
+    , continuous_( false )
   {
     recordablesMap_.create();
   }
@@ -145,12 +146,14 @@ namespace nest
    * ---------------------------------------------------------------- */
 
 
+
   void
   sir_neuron::Parameters_::get( DictionaryDatum& d ) const
   {
     def< double >( d, names::tau_m, tau_m_ );
     def< double >( d, names::beta, beta_ );
     def< double >( d, names::mu, mu_ ); // comment
+    def< bool >( d, names::continuous, continuous_ );
   }
 
 
@@ -172,6 +175,7 @@ namespace nest
     {
       throw BadProperty( "All rate constants must be strictly positive." );
     }
+    updateValueParam< bool >( d, names::continuous, continuous_, node );
   }
 
 
@@ -179,7 +183,7 @@ namespace nest
   sir_neuron::State_::get( DictionaryDatum& d, const Parameters_& ) const
   {
     def< double >( d, names::h, h_ ); // summed input
-    def< double >( d, names::S, y_ ); // sir_neuron output state
+    def< double >( d, names::y, y_ ); // sir_neuron output state
   }
 
 
@@ -251,7 +255,12 @@ namespace nest
     // only if not yet initialized
     if ( S_.t_next_.is_neg_inf() )
     {
-      S_.t_next_ = Time::ms( V_.exp_dist_( V_.rng_ ) * P_.tau_m_ );
+      if (P_.continuous_) {
+       S_.t_next_ +=  Time::ms(V_.exp_dist_( V_.rng_ ) * P_.tau_m_ );
+       }
+       else {
+       S_.t_next_ += Time::ms(P_.tau_m_);
+       }
     }
   }
 
@@ -294,7 +303,7 @@ namespace nest
         // susceptible neurons become infected with probability S_.h_*P_.beta
         if (S_.y_ == 0)
         {
-          if (V_.rng_->drand() < P_.beta_*(S_.h_ + c)){
+          if (V_.rng_->drand() < P_.beta_*P_.tau_m_*(S_.h_ +c)){
             new_y = 1;
             }
           else {
@@ -303,7 +312,7 @@ namespace nest
         }
         // infected neurons recover with probability P_.mu
         if (S_.y_ == 1) {
-          if ( V_.rng_->drand() <P_.mu_){
+          if ( V_.rng_->drand() <P_.mu_*P_.tau_m_ ){
             new_y = 2;
             }
           else {
@@ -329,15 +338,17 @@ namespace nest
         // draw next update interval from exponential distribution
         // if continuous time markov process,
         // add 1 instead
-        if P_.continuous {
-          S_.t_next_ += Time::V_.exp_dist_( V_.rng_ ) * P_.tau_m_ );
+        if (P_.continuous_) {
+          S_.t_next_ +=  Time::ms(V_.exp_dist_( V_.rng_ ) * P_.tau_m_ );
         }
         else {
-        S_.t_next_ += Time::ms( 1);
+        S_.t_next_ += Time::ms(P_.tau_m_);
         }
       } // of if (update now)
 
       // log state data
+      //std::cout << lag;
+      //std::cout << S_.y_;
       B_.logger_.record_data( origin.get_steps() + lag );
 
     } // of for (lag ...
@@ -372,7 +383,7 @@ namespace nest
     const Time& t_spike = e.get_stamp();
 
     if ( m == 1 )
-    { // multiplicity == 1, either a single 1->0 event or the first or second of a
+    { // multiplicity == 1, either a single 1->2 event or the first or second of a
       // pair of 0->1 events
       if ( node_id == S_.last_in_node_id_ && t_spike == S_.t_last_in_spike_ )
       {
@@ -434,7 +445,7 @@ namespace nest
   RecordablesMap< sir_neuron >::create()
   {
     // use standard names whereever you can for consistency!
-    insert_( names::S, &nest::sir_neuron::get_output_state__ );
+    insert_( names::y, &nest::sir_neuron::get_output_state__ );
     insert_( names::h, &nest::sir_neuron::get_input__ );
   }
 } //namespace nest
