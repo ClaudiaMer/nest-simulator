@@ -136,7 +136,8 @@ namespace nest
     : y_( 0 )                               //initialize as susceptible=0
     , h_( 0.0 )
     , last_in_node_id_( 0 )
-    , t_next_( Time::neg_inf() )          // mark as not initialized
+    //, t_next_( Time::neg_inf() )          // mark as not initialized
+    , t_next_( Time::ms(0) )          // mark as not initialized
     , t_last_in_spike_( Time::neg_inf() ) // mark as not intialized
   {
   }
@@ -256,10 +257,10 @@ namespace nest
     if ( S_.t_next_.is_neg_inf() )
     {
       if (P_.continuous_) {
-       S_.t_next_ +=  Time::ms(V_.exp_dist_( V_.rng_ ) * P_.tau_m_ );
+       S_.t_next_ =  Time::ms(V_.exp_dist_( V_.rng_ ) * P_.tau_m_ );
        }
        else {
-       S_.t_next_ += Time::ms(P_.tau_m_);
+       S_.t_next_ = Time::ms(P_.tau_m_);
        }
     }
   }
@@ -282,11 +283,36 @@ namespace nest
       // the buffer for incoming spikes for every time step contains the
       // difference
       // of the total input h with respect to the previous step, so sum them up
+      if (B_.spikes_.get_value( lag ) > 0 )
+      {
+        if (lag > from )
+        {
+        std::cout << (lag -from);
+        std::cout << '\n';
+      }
+      }
       S_.h_ += B_.spikes_.get_value( lag );
-
       double c = B_.currents_.get_value( lag );
+      //std::cout << origin.get_steps();
+      //std::cout << '\n';
+      //std::cout << origin.get_steps()+lag;
+      //std::cout << '\n';
+      //std::cout << S_.t_next_.get_steps();
+      //std::cout << '\n';
+      //if ( Time::step( origin.get_steps() + lag ) > S_.t_next_ )
+      //{
+      //  std::cout << 'u';
+      //  std::cout << '\n';
+      //}
+      //else
+      //{
+      //  std::cout << 'n';
+      //  std::cout << '\n';
+      //}
 
-      // check, if the update needs to be done
+
+
+      //if ( Time::step( origin.get_steps() + lag ) > Time::neg_inf() )
       if ( Time::step( origin.get_steps() + lag ) > S_.t_next_ )
       {
         // change the state of the neuron with probability given by
